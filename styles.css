@@ -86,3 +86,18 @@ body {
     opacity: 0.5;
   }
   
+  #verify-button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  #verify-button:hover {
+    background-color: #27ae60;
+  }
+  

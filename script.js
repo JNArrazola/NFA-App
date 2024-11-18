@@ -1,6 +1,7 @@
 const graphContainer = document.getElementById("graph-container");
 const actionsList = document.getElementById("actions-list");
 const sequenceList = document.getElementById("sequence-list");
+const verifyButton = document.getElementById("verify-button");
 
 let nodes = [];
 let edges = [];
@@ -279,4 +280,80 @@ function getDragAfterElement(container, y) {
     },
     { offset: Number.NEGATIVE_INFINITY }
   ).element;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+verifyButton.addEventListener("click", async () => {
+  const sequence = [...sequenceList.children].map((item) => item.textContent);
+
+  if (!initialState) {
+    alert("No hay un estado inicial marcado.");
+    return;
+  }
+  if (sequence.length === 0) {
+    alert("La secuencia de acciones está vacía.");
+    return;
+  }
+
+  resetNodeColors(); 
+  const visitedNodes = new Set();
+
+  const isValid = await dfs(initialState, sequence, visitedNodes);
+
+  if (isValid) {
+    alert("Secuencia válida: Se alcanzó un estado de aceptación.");
+  } else {
+    alert("Secuencia inválida: No se alcanzó un estado de aceptación.");
+  }
+
+  resetNodeColors(); 
+});
+
+async function dfs(currentNode, actions, visitedNodes) {
+  await colorNode(currentNode, "#f1c40f"); 
+  await sleep(500); 
+
+  if (actions.length === 0) {
+    if (currentNode.dataset.isFinal === "true") {
+      await colorNode(currentNode, "#2ecc71"); 
+      return true;
+    } else {
+      await colorNode(currentNode, "#e74c3c"); 
+      return false;
+    }
+  }
+
+  visitedNodes.add(currentNode);
+
+  const currentAction = actions[0];
+  const remainingActions = actions.slice(1);
+
+  const neighbors = edges
+    .filter((edge) => edge.from === currentNode && edge.name === currentAction)
+    .map((edge) => edge.to);
+
+  for (const neighbor of neighbors) {
+    if (!visitedNodes.has(neighbor)) {
+      const result = await dfs(neighbor, remainingActions, visitedNodes);
+      if (result) {
+        await colorNode(currentNode, "#2ecc71"); 
+        return true;
+      }
+    }
+  }
+
+  visitedNodes.delete(currentNode); 
+  await colorNode(currentNode, "#e74c3c"); 
+  return false;
+}
+
+async function colorNode(node, color) {
+  node.style.backgroundColor = color;
+}
+
+function resetNodeColors() {
+  nodes.forEach(({ element }) => updateNodeStyle(element));
 }
