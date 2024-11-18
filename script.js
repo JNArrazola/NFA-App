@@ -98,50 +98,97 @@ function createNode(x, y, name) {
 function handleNodeClick(node) {
   if (!selectedNode) {
     selectedNode = node;
-    node.style.border = "2px solid #2ecc71";
+    node.style.border = "2px solid #2ecc71"; // Resaltar nodo seleccionado
   } else if (selectedNode === node) {
-    selectedNode.style.border = "none";
+    // Doble clic en el mismo nodo: crear autolazo
+    const edgeName = prompt("Enter self-loop name:", "Loop");
+    if (edgeName) {
+      createEdge(node, node, edgeName); // Autolazo
+    }
+    selectedNode.style.border = "none"; // Quitar resaltado
     selectedNode = null;
   } else {
     const edgeName = prompt("Enter edge name:", "Edge");
     if (edgeName) {
-      createEdge(selectedNode, node, edgeName);
+      createEdge(selectedNode, node, edgeName); // Arista normal
     }
-    selectedNode.style.border = "none";
+    selectedNode.style.border = "none"; // Quitar resaltado
     selectedNode = null;
   }
 }
 
+
 function createEdge(from, to, name) {
-  const fromX = from.offsetLeft + 25;
-  const fromY = from.offsetTop + 25;
-  const toX = to.offsetLeft + 25;
-  const toY = to.offsetTop + 25;
+  const isSelfLoop = from === to;
 
-  const angle = Math.atan2(toY - fromY, toX - fromX);
-  const adjustedFromX = fromX + 20 * Math.cos(angle);
-  const adjustedFromY = fromY + 20 * Math.sin(angle);
-  const adjustedToX = toX - 20 * Math.cos(angle);
-  const adjustedToY = toY - 20 * Math.sin(angle);
+  if (isSelfLoop) {
+    const fromX = from.offsetLeft + 25;
+    const fromY = from.offsetTop + 25;
 
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", adjustedFromX);
-  line.setAttribute("y1", adjustedFromY);
-  line.setAttribute("x2", adjustedToX);
-  line.setAttribute("y2", adjustedToY);
-  line.setAttribute("marker-end", "url(#arrow)");
+    const existingLoops = edges.filter(edge => edge.from === from && edge.to === to).length;
+    const offset = 20 + existingLoops * 10;
 
-  const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  label.setAttribute("x", (adjustedFromX + adjustedToX) / 2);
-  label.setAttribute("y", (adjustedFromY + adjustedToY) / 2 - 5);
-  label.textContent = name;
+    const loop = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    loop.setAttribute(
+      "d",
+      `M ${fromX - offset} ${fromY - offset} 
+         C ${fromX - offset * 1.5} ${fromY - offset * 1.5}, 
+           ${fromX + offset * 1.5} ${fromY - offset * 1.5}, 
+           ${fromX + offset} ${fromY - offset}`
+    );
+    loop.setAttribute("fill", "none");
+    loop.setAttribute("stroke", "#000");
+    loop.setAttribute("stroke-width", "2");
+    loop.setAttribute("marker-end", "url(#arrow)");
 
-  svg.appendChild(line);
-  svg.appendChild(label);
-  edges.push({ from, to, line, label, name });
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", fromX + offset);
+    label.setAttribute("y", fromY - offset - 10);
+    label.textContent = name;
+
+    svg.appendChild(loop);
+    svg.appendChild(label);
+
+    edges.push({ from, to, path: loop, label, name });
+  } else {
+    const fromX = from.offsetLeft + 25;
+    const fromY = from.offsetTop + 25;
+    const toX = to.offsetLeft + 25;
+    const toY = to.offsetTop + 25;
+
+    const existingEdges = edges.filter(edge => (edge.from === from && edge.to === to) || (edge.from === to && edge.to === from)).length;
+    const offset = (existingEdges % 2 === 0 ? 1 : -1) * Math.ceil(existingEdges / 2) * 10;
+
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+    const adjustedFromX = fromX + 20 * Math.cos(angle) + offset * Math.sin(angle);
+    const adjustedFromY = fromY + 20 * Math.sin(angle) - offset * Math.cos(angle);
+    const adjustedToX = toX - 20 * Math.cos(angle) + offset * Math.sin(angle);
+    const adjustedToY = toY - 20 * Math.sin(angle) - offset * Math.cos(angle);
+
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", adjustedFromX);
+    line.setAttribute("y1", adjustedFromY);
+    line.setAttribute("x2", adjustedToX);
+    line.setAttribute("y2", adjustedToY);
+    line.setAttribute("stroke", "#000");
+    line.setAttribute("stroke-width", "2");
+    line.setAttribute("marker-end", "url(#arrow)");
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    label.setAttribute("x", (adjustedFromX + adjustedToX) / 2 + offset * 0.5);
+    label.setAttribute("y", (adjustedFromY + adjustedToY) / 2 - offset * 0.5);
+    label.textContent = name;
+
+    svg.appendChild(line);
+    svg.appendChild(label);
+
+    edges.push({ from, to, line, label, name });
+  }
 
   addAction(name);
 }
+
+
 
 function handleContextMenuOption(optionIndex) {
   if (!contextMenuTargetNode) return;
@@ -178,18 +225,23 @@ function handleContextMenuOption(optionIndex) {
       }
       break;
 
-    case 3: // Delete node
+      case 3: // Delete node
       graphContainer.removeChild(node);
+    
       nodes = nodes.filter((n) => n.element !== node);
+    
       edges = edges.filter((edge) => {
         if (edge.from === node || edge.to === node) {
-          svg.removeChild(edge.line);
-          svg.removeChild(edge.label);
-          return false;
+          if (edge.line) svg.removeChild(edge.line);
+          if (edge.path) svg.removeChild(edge.path); 
+          if (edge.label) svg.removeChild(edge.label);
+          return false; 
         }
-        return true;
+        return true; 
       });
+    
       break;
+    
 
     default:
       break;
@@ -313,42 +365,52 @@ verifyButton.addEventListener("click", async () => {
 });
 
 async function dfs(currentNode, actions, visitedNodes) {
-  await colorNode(currentNode, "#f1c40f"); 
-  await sleep(500); 
+  await colorNode(currentNode, "#f1c40f"); // Nodo en proceso (amarillo)
+  await sleep(500); // Esperar para visualización
 
   if (actions.length === 0) {
+    // Validar si estamos en un estado de aceptación
     if (currentNode.dataset.isFinal === "true") {
-      await colorNode(currentNode, "#2ecc71"); 
+      await colorNode(currentNode, "#2ecc71"); // Nodo aceptado (verde)
       return true;
     } else {
-      await colorNode(currentNode, "#e74c3c"); 
+      await colorNode(currentNode, "#e74c3c"); // Nodo rechazado (rojo)
       return false;
     }
   }
 
-  visitedNodes.add(currentNode);
-
   const currentAction = actions[0];
   const remainingActions = actions.slice(1);
 
-  const neighbors = edges
-    .filter((edge) => edge.from === currentNode && edge.name === currentAction)
-    .map((edge) => edge.to);
+  // Incluir autolazos en vecinos
+  const neighbors = edges.filter((edge) => edge.from === currentNode && edge.name === currentAction);
 
-  for (const neighbor of neighbors) {
-    if (!visitedNodes.has(neighbor)) {
+  for (const edge of neighbors) {
+    const neighbor = edge.to;
+
+    // Caso de autolazo
+    if (currentNode === neighbor) {
+      const result = await dfs(currentNode, remainingActions, visitedNodes); 
+      if (result) {
+        await colorNode(currentNode, "#2ecc71"); 
+        return true;
+      }
+    } else if (!visitedNodes.has(neighbor)) {
+      // Caso de nodo vecino
+      visitedNodes.add(neighbor);
       const result = await dfs(neighbor, remainingActions, visitedNodes);
       if (result) {
         await colorNode(currentNode, "#2ecc71"); 
         return true;
       }
+      visitedNodes.delete(neighbor); 
     }
   }
 
-  visitedNodes.delete(currentNode); 
   await colorNode(currentNode, "#e74c3c"); 
   return false;
 }
+
 
 async function colorNode(node, color) {
   node.style.backgroundColor = color;
