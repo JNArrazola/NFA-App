@@ -6,7 +6,6 @@ let nodes = [];
 let edges = [];
 let selectedNode = null;
 
-// Add SVG for edges
 const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 svg.innerHTML = `
   <defs>
@@ -17,7 +16,6 @@ svg.innerHTML = `
 `;
 graphContainer.appendChild(svg);
 
-// Create a node on double click
 graphContainer.addEventListener("dblclick", (e) => {
   if (e.target === graphContainer) {
     const name = prompt("Enter node name:", `Node ${nodes.length}`);
@@ -27,7 +25,6 @@ graphContainer.addEventListener("dblclick", (e) => {
   }
 });
 
-// Handle clicking on nodes to create edges
 graphContainer.addEventListener("click", (e) => {
   if (e.target.classList.contains("node")) {
     handleNodeClick(e.target);
@@ -48,7 +45,7 @@ function createNode(x, y, name) {
 function handleNodeClick(node) {
   if (!selectedNode) {
     selectedNode = node;
-    node.style.border = "2px solid #2ecc71"; // Highlight selected node
+    node.style.border = "2px solid #2ecc71"; 
   } else if (selectedNode === node) {
     selectedNode.style.border = "none";
     selectedNode = null;
@@ -57,7 +54,7 @@ function handleNodeClick(node) {
     if (edgeName) {
       createEdge(selectedNode, node, edgeName);
     }
-    selectedNode.style.border = "none"; // Reset selected node
+    selectedNode.style.border = "none"; 
     selectedNode = null;
   }
 }
@@ -68,14 +65,12 @@ function createEdge(from, to, name) {
   const toX = to.offsetLeft + 25;
   const toY = to.offsetTop + 25;
 
-  // Calculate angle and adjust positions to draw lines as arrows
   const angle = Math.atan2(toY - fromY, toX - fromX);
   const adjustedFromX = fromX + 20 * Math.cos(angle);
   const adjustedFromY = fromY + 20 * Math.sin(angle);
   const adjustedToX = toX - 20 * Math.cos(angle);
   const adjustedToY = toY - 20 * Math.sin(angle);
 
-  // Create the directed edge (with arrow)
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
   line.setAttribute("x1", adjustedFromX);
   line.setAttribute("y1", adjustedFromY);
@@ -92,7 +87,6 @@ function createEdge(from, to, name) {
   svg.appendChild(label);
   edges.push({ from, to, line, label, name });
 
-  // Add the edge to "Acciones" if it doesn't already exist
   addAction(name);
 }
 
@@ -107,24 +101,26 @@ function addAction(name) {
     e.dataTransfer.setData("text/plain", name);
   });
 
+  action.addEventListener("click", () => {
+    addToSequence(name);
+  });
+
   actionsList.appendChild(action);
 }
 
-sequenceList.addEventListener("dragover", (e) => {
-  e.preventDefault();
-  const dragging = document.querySelector(".dragging");
-  const afterElement = getDragAfterElement(sequenceList, e.clientY);
-  if (afterElement == null) {
-    sequenceList.appendChild(dragging);
-  } else {
-    sequenceList.insertBefore(dragging, afterElement);
-  }
-});
-
-sequenceList.addEventListener("drop", (e) => {
-  const name = e.dataTransfer.getData("text/plain");
+function addToSequence(name) {
   const action = document.createElement("li");
   action.textContent = name;
+  action.draggable = true;
+
+  action.addEventListener("dragstart", (e) => {
+    action.classList.add("dragging");
+    e.dataTransfer.setData("text/plain", name);
+  });
+
+  action.addEventListener("dragend", () => {
+    action.classList.remove("dragging");
+  });
 
   action.addEventListener("contextmenu", (e) => {
     e.preventDefault();
@@ -132,6 +128,17 @@ sequenceList.addEventListener("drop", (e) => {
   });
 
   sequenceList.appendChild(action);
+}
+
+sequenceList.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  const afterElement = getDragAfterElement(sequenceList, e.clientY);
+  const dragging = document.querySelector(".dragging");
+  if (afterElement == null) {
+    sequenceList.appendChild(dragging);
+  } else {
+    sequenceList.insertBefore(dragging, afterElement);
+  }
 });
 
 function getDragAfterElement(container, y) {
@@ -150,3 +157,7 @@ function getDragAfterElement(container, y) {
     { offset: Number.NEGATIVE_INFINITY }
   ).element;
 }
+
+sequenceList.addEventListener("drop", (e) => {
+  e.preventDefault();
+});
