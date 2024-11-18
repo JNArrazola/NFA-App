@@ -365,52 +365,47 @@ verifyButton.addEventListener("click", async () => {
 });
 
 async function dfs(currentNode, actions, visitedNodes) {
-  await colorNode(currentNode, "#f1c40f"); // Nodo en proceso (amarillo)
-  await sleep(500); // Esperar para visualización
+  await colorNode(currentNode, "#f1c40f"); 
+  await sleep(500); 
 
   if (actions.length === 0) {
-    // Validar si estamos en un estado de aceptación
     if (currentNode.dataset.isFinal === "true") {
-      await colorNode(currentNode, "#2ecc71"); // Nodo aceptado (verde)
+      await colorNode(currentNode, "#2ecc71"); 
       return true;
     } else {
-      await colorNode(currentNode, "#e74c3c"); // Nodo rechazado (rojo)
+      await colorNode(currentNode, "#e74c3c"); 
       return false;
     }
   }
 
-  const currentAction = actions[0];
-  const remainingActions = actions.slice(1);
+  const currentAction = actions[0]; 
+  const remainingActions = actions.slice(1); 
 
-  // Incluir autolazos en vecinos
   const neighbors = edges.filter((edge) => edge.from === currentNode && edge.name === currentAction);
 
   for (const edge of neighbors) {
     const neighbor = edge.to;
 
-    // Caso de autolazo
     if (currentNode === neighbor) {
       const result = await dfs(currentNode, remainingActions, visitedNodes); 
       if (result) {
         await colorNode(currentNode, "#2ecc71"); 
         return true;
       }
-    } else if (!visitedNodes.has(neighbor)) {
-      // Caso de nodo vecino
-      visitedNodes.add(neighbor);
+    } else if (!visitedNodes.has(`${neighbor}-${remainingActions.join(",")}`)) {
+      visitedNodes.add(`${neighbor}-${remainingActions.join(",")}`);
       const result = await dfs(neighbor, remainingActions, visitedNodes);
+      visitedNodes.delete(`${neighbor}-${remainingActions.join(",")}`); 
       if (result) {
         await colorNode(currentNode, "#2ecc71"); 
         return true;
       }
-      visitedNodes.delete(neighbor); 
     }
   }
 
   await colorNode(currentNode, "#e74c3c"); 
   return false;
 }
-
 
 async function colorNode(node, color) {
   node.style.backgroundColor = color;
