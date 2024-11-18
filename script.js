@@ -5,6 +5,7 @@ const sequenceList = document.getElementById("sequence-list");
 let nodes = [];
 let edges = [];
 let selectedNode = null;
+let initialState = null;
 
 const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 svg.innerHTML = `
@@ -15,6 +16,36 @@ svg.innerHTML = `
   </defs>
 `;
 graphContainer.appendChild(svg);
+
+// Context menu setup
+const contextMenu = document.createElement("ul");
+contextMenu.id = "context-menu";
+contextMenu.style.position = "absolute";
+contextMenu.style.display = "none";
+contextMenu.style.listStyle = "none";
+contextMenu.style.padding = "5px";
+contextMenu.style.backgroundColor = "#fff";
+contextMenu.style.border = "1px solid #ddd";
+contextMenu.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+document.body.appendChild(contextMenu);
+
+const options = [
+  "Marcar/Desmarcar como estado inicial",
+  "Marcar/Desmarcar como estado final",
+  "Cambiar nombre",
+  "Borrar nodo"
+];
+
+options.forEach((optionText, index) => {
+  const option = document.createElement("li");
+  option.textContent = optionText;
+  option.style.cursor = "pointer";
+  option.style.padding = "5px";
+  option.addEventListener("click", () => handleContextMenuOption(index));
+  contextMenu.appendChild(option);
+});
+
+let contextMenuTargetNode = null;
 
 graphContainer.addEventListener("dblclick", (e) => {
   if (e.target === graphContainer) {
@@ -31,12 +62,33 @@ graphContainer.addEventListener("click", (e) => {
   }
 });
 
+graphContainer.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  if (e.target.classList.contains("node")) {
+    contextMenuTargetNode = e.target;
+    contextMenu.style.left = `${e.pageX}px`;
+    contextMenu.style.top = `${e.pageY}px`;
+    contextMenu.style.display = "block";
+  } else {
+    contextMenu.style.display = "none";
+    contextMenuTargetNode = null;
+  }
+});
+
+document.addEventListener("click", () => {
+  contextMenu.style.display = "none";
+  contextMenuTargetNode = null;
+});
+
 function createNode(x, y, name) {
   const node = document.createElement("div");
   node.classList.add("node");
   node.style.left = `${x - 25}px`;
   node.style.top = `${y - 25}px`;
   node.textContent = name;
+
+  node.dataset.isInitial = "false";
+  node.dataset.isFinal = "false";
 
   graphContainer.appendChild(node);
   nodes.push({ element: node, name });
@@ -45,7 +97,7 @@ function createNode(x, y, name) {
 function handleNodeClick(node) {
   if (!selectedNode) {
     selectedNode = node;
-    node.style.border = "2px solid #2ecc71"; 
+    node.style.border = "2px solid #2ecc71";
   } else if (selectedNode === node) {
     selectedNode.style.border = "none";
     selectedNode = null;
@@ -54,7 +106,7 @@ function handleNodeClick(node) {
     if (edgeName) {
       createEdge(selectedNode, node, edgeName);
     }
-    selectedNode.style.border = "none"; 
+    selectedNode.style.border = "none";
     selectedNode = null;
   }
 }
@@ -88,6 +140,77 @@ function createEdge(from, to, name) {
   edges.push({ from, to, line, label, name });
 
   addAction(name);
+}
+
+function handleContextMenuOption(optionIndex) {
+  if (!contextMenuTargetNode) return;
+  const node = contextMenuTargetNode;
+
+  switch (optionIndex) {
+    case 0: // Mark/Unmark as initial state
+      if (node.dataset.isInitial === "true") {
+        node.dataset.isInitial = "false";
+        updateNodeStyle(node);
+        initialState = null;
+      } else {
+        if (initialState) {
+          initialState.dataset.isInitial = "false";
+          updateNodeStyle(initialState);
+        }
+        node.dataset.isInitial = "true";
+        updateNodeStyle(node);
+        initialState = node;
+      }
+      break;
+
+    case 1: // Mark/Unmark as final state
+      node.dataset.isFinal = node.dataset.isFinal === "true" ? "false" : "true";
+      updateNodeStyle(node);
+      break;
+
+    case 2: // Rename node
+      const newName = prompt("Enter new name:", node.textContent);
+      if (newName) {
+        node.textContent = newName;
+        const nodeData = nodes.find((n) => n.element === node);
+        if (nodeData) nodeData.name = newName;
+      }
+      break;
+
+    case 3: // Delete node
+      graphContainer.removeChild(node);
+      nodes = nodes.filter((n) => n.element !== node);
+      edges = edges.filter((edge) => {
+        if (edge.from === node || edge.to === node) {
+          svg.removeChild(edge.line);
+          svg.removeChild(edge.label);
+          return false;
+        }
+        return true;
+      });
+      break;
+
+    default:
+      break;
+  }
+
+  contextMenu.style.display = "none";
+  contextMenuTargetNode = null;
+}
+
+function updateNodeStyle(node) {
+  const isInitial = node.dataset.isInitial === "true";
+  const isFinal = node.dataset.isFinal === "true";
+
+  if (isInitial && isFinal) {
+    node.style.backgroundColor = "#f39c12"; // Both initial and final
+  } else if (isInitial) {
+    node.style.backgroundColor = "#2ecc71"; // Initial state
+  } else if (isFinal) {
+    node.style.backgroundColor = "#e74c3c"; // Final state
+  } else {
+    node.style.backgroundColor = "#3498db"; // Default state
+  }
 }
 
 function addAction(name) {
@@ -157,7 +280,3 @@ function getDragAfterElement(container, y) {
     { offset: Number.NEGATIVE_INFINITY }
   ).element;
 }
-
-sequenceList.addEventListener("drop", (e) => {
-  e.preventDefault();
-});
