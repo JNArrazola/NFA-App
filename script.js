@@ -414,3 +414,99 @@ async function colorNode(node, color) {
 function resetNodeColors() {
   nodes.forEach(({ element }) => updateNodeStyle(element));
 }
+
+// Export options
+const exportButton = document.getElementById("export-button");
+const importButton = document.getElementById("import-button");
+const importInput = document.getElementById("import-input");
+
+exportButton.addEventListener("click", () => {
+  const filename = prompt("Ingrese el nombre del archivo:", "grafo");
+
+  if (filename === null || filename.trim() === "") {
+    alert("Exportación cancelada.");
+    return;
+  }
+
+  const graphData = {
+    nodes: nodes.map((node) => ({
+      name: node.name,
+      isInitial: node.element.dataset.isInitial === "true",
+      isFinal: node.element.dataset.isFinal === "true",
+      position: {
+        x: parseInt(node.element.style.left, 10),
+        y: parseInt(node.element.style.top, 10),
+      },
+    })),
+    edges: edges.map((edge) => ({
+      from: edge.from.textContent,
+      to: edge.to.textContent,
+      name: edge.name,
+    })),
+    actions: [...actionsList.children].map((action) => action.textContent),
+    sequence: [...sequenceList.children].map((sequence) => sequence.textContent),
+  };
+
+  const blob = new Blob([JSON.stringify(graphData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename.trim()}.json`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+});
+
+
+importButton.addEventListener("click", () => {
+  importInput.click(); 
+});
+
+importInput.addEventListener("change", (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const graphData = JSON.parse(e.target.result);
+
+      nodes.forEach((node) => graphContainer.removeChild(node.element));
+      edges.forEach((edge) => {
+        svg.removeChild(edge.line || edge.path);
+        svg.removeChild(edge.label);
+      });
+      nodes = [];
+      edges = [];
+      actionsList.innerHTML = "";
+      sequenceList.innerHTML = "";
+
+      graphData.nodes.forEach((nodeData) => {
+        createNode(nodeData.position.x + 25, nodeData.position.y + 25, nodeData.name);
+        const node = nodes.find((n) => n.name === nodeData.name);
+        if (nodeData.isInitial) {
+          node.element.dataset.isInitial = "true";
+          initialState = node.element;
+        }
+        if (nodeData.isFinal) {
+          node.element.dataset.isFinal = "true";
+        }
+        updateNodeStyle(node.element);
+      });
+
+      graphData.edges.forEach((edgeData) => {
+        const fromNode = nodes.find((n) => n.name === edgeData.from).element;
+        const toNode = nodes.find((n) => n.name === edgeData.to).element;
+        createEdge(fromNode, toNode, edgeData.name);
+      });
+
+      graphData.actions.forEach((action) => addAction(action));
+      graphData.sequence.forEach((sequence) => addToSequence(sequence));
+    } catch (error) {
+      alert("Error al importar el archivo. Verifique que el formato sea JSON válido.");
+    }
+  };
+
+  reader.readAsText(file);
+});

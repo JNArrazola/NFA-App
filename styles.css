@@ -100,4 +100,18 @@ body {
   #verify-button:hover {
     background-color: #27ae60;
   }
+  #buttons {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  #buttons button {
+    flex: 1; /* Para mantener proporciones iguales */
+  }
+  
+  #import-input {
+    display: none; /* Ocultar el input del archivo */
+  }
   
