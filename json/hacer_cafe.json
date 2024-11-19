@@ -1,0 +1,116 @@
+{
+  "nodes": [
+    {
+      "name": "Encender máquina",
+      "isInitial": true,
+      "isFinal": false,
+      "position": {
+        "x": 100,
+        "y": 200
+      }
+    },
+    {
+      "name": "Llenar agua",
+      "isInitial": false,
+      "isFinal": false,
+      "position": {
+        "x": 300,
+        "y": 100
+      }
+    },
+    {
+      "name": "Llenar café",
+      "isInitial": false,
+      "isFinal": false,
+      "position": {
+        "x": 300,
+        "y": 300
+      }
+    },
+    {
+      "name": "Seleccionar tipo de café",
+      "isInitial": false,
+      "isFinal": false,
+      "position": {
+        "x": 500,
+        "y": 200
+      }
+    },
+    {
+      "name": "Agregar complementos",
+      "isInitial": false,
+      "isFinal": false,
+      "position": {
+        "x": 700,
+        "y": 100
+      }
+    },
+    {
+      "name": "Servir café",
+      "isInitial": false,
+      "isFinal": true,
+      "position": {
+        "x": 700,
+        "y": 300
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "Encender máquina",
+      "to": "Llenar agua",
+      "name": "Añadir agua"
+    },
+    {
+      "from": "Encender máquina",
+      "to": "Llenar café",
+      "name": "Añadir café"
+    },
+    {
+      "from": "Llenar agua",
+      "to": "Seleccionar tipo de café",
+      "name": "Continuar"
+    },
+    {
+      "from": "Llenar café",
+      "to": "Seleccionar tipo de café",
+      "name": "Continuar"
+    },
+    {
+      "from": "Seleccionar tipo de café",
+      "to": "Agregar complementos",
+      "name": "Complementos"
+    },
+    {
+      "from": "Seleccionar tipo de café",
+      "to": "Servir café",
+      "name": "Directo"
+    },
+    {
+      "from": "Agregar complementos",
+      "to": "Agregar complementos",
+      "name": "Repetir"
+    },
+    {
+      "from": "Agregar complementos",
+      "to": "Servir café",
+      "name": "Finalizar"
+    }
+  ],
+  "actions": [
+    "Añadir agua",
+    "Añadir café",
+    "Continuar",
+    "Complementos",
+    "Directo",
+    "Repetir",
+    "Finalizar"
+  ],
+  "sequence": [
+    "Añadir agua",
+    "Continuar",
+    "Complementos",
+    "Repetir",
+    "Finalizar"
+  ]
+}

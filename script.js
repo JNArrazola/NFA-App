@@ -47,6 +47,120 @@ options.forEach((optionText, index) => {
 });
 
 let contextMenuTargetNode = null;
+let isDragging = false; 
+
+graphContainer.addEventListener("mousedown", (e) => {
+  if (e.target.classList.contains("node")) {
+    let draggedNode = e.target;
+    isDragging = false;
+
+    const rect = graphContainer.getBoundingClientRect();
+    const initialX = e.clientX;
+    const initialY = e.clientY;
+
+    const onMouseMove = (event) => {
+      isDragging = true; 
+      const newX = event.clientX - rect.left - 25;
+      const newY = event.clientY - rect.top - 25;
+
+      draggedNode.style.left = `${newX}px`;
+      draggedNode.style.top = `${newY}px`;
+
+      updateEdges(draggedNode);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    };
+
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }
+});
+
+/**
+ * Crazy function to update the edges of the graph
+ * Pure math baby 🤓
+ *  */  
+function updateEdges(node) {
+  const nodeRadius = 25; 
+  const nodeX = parseInt(node.style.left, 10) + nodeRadius;
+  const nodeY = parseInt(node.style.top, 10) + nodeRadius;
+
+  edges.forEach((edge) => {
+    if (edge.from === node && edge.to === node) {
+      const existingLoops = edges.filter((e) => e.from === edge.from && e.to === edge.to).length;
+      const loopIndex = edges.filter((e) => e.from === edge.from && e.to === edge.to).indexOf(edge);
+      const offset = 20 + loopIndex * 15;
+
+      edge.path.setAttribute(
+        "d",
+        `M ${nodeX - offset} ${nodeY - offset} 
+         C ${nodeX - offset * 1.5} ${nodeY - offset * 1.5}, 
+           ${nodeX + offset * 1.5} ${nodeY - offset * 1.5}, 
+           ${nodeX + offset} ${nodeY - offset}`
+      );
+
+      if (edge.label) {
+        edge.label.setAttribute("x", nodeX + offset);
+        edge.label.setAttribute("y", nodeY - offset - 10);
+      }
+    } else if (edge.from === node) {
+      const toX = parseInt(edge.to.style.left, 10) + nodeRadius;
+      const toY = parseInt(edge.to.style.top, 10) + nodeRadius;
+
+      const existingEdges = edges.filter((e) => e.from === edge.from && e.to === edge.to).length;
+      const edgeIndex = edges.filter((e) => e.from === edge.from && e.to === edge.to).indexOf(edge);
+      const offset = (edgeIndex - existingEdges / 2) * 15;
+
+      const angle = Math.atan2(toY - nodeY, toX - nodeX);
+      const adjustedNodeX = nodeX + nodeRadius * Math.cos(angle);
+      const adjustedNodeY = nodeY + nodeRadius * Math.sin(angle);
+      const adjustedToX = toX - nodeRadius * Math.cos(angle) + offset * Math.sin(angle);
+      const adjustedToY = toY - nodeRadius * Math.sin(angle) - offset * Math.cos(angle);
+
+      if (edge.line) {
+        edge.line.setAttribute("x1", adjustedNodeX);
+        edge.line.setAttribute("y1", adjustedNodeY);
+        edge.line.setAttribute("x2", adjustedToX);
+        edge.line.setAttribute("y2", adjustedToY);
+      }
+
+      if (edge.label) {
+        edge.label.setAttribute("x", (adjustedNodeX + adjustedToX) / 2 + offset);
+        edge.label.setAttribute("y", (adjustedNodeY + adjustedToY) / 2 - 5);
+      }
+    }
+
+    if (edge.to === node && edge.from !== node) {
+      const fromX = parseInt(edge.from.style.left, 10) + nodeRadius;
+      const fromY = parseInt(edge.from.style.top, 10) + nodeRadius;
+
+      const existingEdges = edges.filter((e) => e.from === edge.from && e.to === edge.to).length;
+      const edgeIndex = edges.filter((e) => e.from === edge.from && e.to === edge.to).indexOf(edge);
+      const offset = (edgeIndex - existingEdges / 2) * 15;
+
+      const angle = Math.atan2(nodeY - fromY, nodeX - fromX);
+      const adjustedFromX = fromX + nodeRadius * Math.cos(angle) + offset * Math.sin(angle);
+      const adjustedFromY = fromY + nodeRadius * Math.sin(angle) - offset * Math.cos(angle);
+      const adjustedNodeX = nodeX - nodeRadius * Math.cos(angle);
+      const adjustedNodeY = nodeY - nodeRadius * Math.sin(angle);
+
+      if (edge.line) {
+        edge.line.setAttribute("x1", adjustedFromX);
+        edge.line.setAttribute("y1", adjustedFromY);
+        edge.line.setAttribute("x2", adjustedNodeX);
+        edge.line.setAttribute("y2", adjustedNodeY);
+      }
+
+      if (edge.label) {
+        edge.label.setAttribute("x", (adjustedFromX + adjustedNodeX) / 2 + offset);
+        edge.label.setAttribute("y", (adjustedFromY + adjustedNodeY) / 2 - 5);
+      }
+    }
+  });
+}
 
 graphContainer.addEventListener("dblclick", (e) => {
   if (e.target === graphContainer) {
@@ -58,8 +172,13 @@ graphContainer.addEventListener("dblclick", (e) => {
 });
 
 graphContainer.addEventListener("click", (e) => {
+  if (isDragging) {
+    isDragging = false;
+    return;
+  }
+
   if (e.target.classList.contains("node")) {
-    handleNodeClick(e.target);
+    handleNodeClick(e.target); 
   }
 });
 
