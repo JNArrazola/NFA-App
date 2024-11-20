@@ -1,0 +1,161 @@
+{
+    "nodes": [
+      {
+        "name": "Inicio",
+        "isInitial": true,
+        "isFinal": false,
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      {
+        "name": "Verificar materiales",
+        "isInitial": false,
+        "isFinal": false,
+        "position": {
+          "x": 400,
+          "y": 100
+        }
+      },
+      {
+        "name": "Ensamblar piezas",
+        "isInitial": false,
+        "isFinal": false,
+        "position": {
+          "x": 700,
+          "y": 100
+        }
+      },
+      {
+        "name": "Inspección inicial",
+        "isInitial": false,
+        "isFinal": false,
+        "position": {
+          "x": 1000,
+          "y": 100
+        }
+      },
+      {
+        "name": "Ajustes menores",
+        "isInitial": false,
+        "isFinal": false,
+        "position": {
+          "x": 700,
+          "y": 400
+        }
+      },
+      {
+        "name": "Prueba funcional",
+        "isInitial": false,
+        "isFinal": false,
+        "position": {
+          "x": 1000,
+          "y": 400
+        }
+      },
+      {
+        "name": "Embalaje",
+        "isInitial": false,
+        "isFinal": false,
+        "position": {
+          "x": 1300,
+          "y": 250
+        }
+      },
+      {
+        "name": "Producto listo",
+        "isInitial": false,
+        "isFinal": true,
+        "position": {
+          "x": 1600,
+          "y": 250
+        }
+      },
+      {
+        "name": "Desechar producto",
+        "isInitial": false,
+        "isFinal": true,
+        "position": {
+          "x": 1300,
+          "y": 600
+        }
+      }
+    ],
+  
+    "edges": [
+      {
+        "from": "Inicio",
+        "to": "Verificar materiales",
+        "name": "Verificar"
+      },
+      {
+        "from": "Verificar materiales",
+        "to": "Ensamblar piezas",
+        "name": "Materiales correctos"
+      },
+      {
+        "from": "Verificar materiales",
+        "to": "Desechar producto",
+        "name": "Materiales incorrectos"
+      },
+      {
+        "from": "Ensamblar piezas",
+        "to": "Inspección inicial",
+        "name": "Ensamblado completo"
+      },
+      {
+        "from": "Inspección inicial",
+        "to": "Ajustes menores",
+        "name": "Defecto menor"
+      },
+      {
+        "from": "Inspección inicial",
+        "to": "Prueba funcional",
+        "name": "Inspección aprobada"
+      },
+      {
+        "from": "Ajustes menores",
+        "to": "Prueba funcional",
+        "name": "Ajustes completados"
+      },
+      {
+        "from": "Prueba funcional",
+        "to": "Embalaje",
+        "name": "Prueba aprobada"
+      },
+      {
+        "from": "Prueba funcional",
+        "to": "Desechar producto",
+        "name": "Prueba fallida"
+      },
+      {
+        "from": "Embalaje",
+        "to": "Producto listo",
+        "name": "Producto embalado"
+      }
+    ],
+  
+    "actions": [
+      "Verificar",
+      "Materiales correctos",
+      "Materiales incorrectos",
+      "Ensamblado completo",
+      "Defecto menor",
+      "Inspección aprobada",
+      "Ajustes completados",
+      "Prueba aprobada",
+      "Prueba fallida",
+      "Producto embalado"
+    ],
+  
+    "sequence": [
+      "Verificar",
+      "Materiales correctos",
+      "Ensamblado completo",
+      "Inspección aprobada",
+      "Prueba aprobada",
+      "Producto embalado"
+    ]
+  }
+  
